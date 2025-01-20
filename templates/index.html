@@ -1,0 +1,357 @@
+{% load static %}
+{% load humanize %}
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- Standard Meta -->
+<meta charset="utf-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+
+<!-- Site Properties -->
+<title>Tolyfun API Documentation</title>
+<link rel="stylesheet" type="text/css" href="/static/assets/static/css/bootstrap.min.css">
+<link rel="stylesheet" type="text/css" href="/static/assets/static/css/fontawesome.css">
+<link rel="stylesheet" type="text/css" href="/static/assets/static/css/rigan.css">
+<link rel="stylesheet" type="text/css" href="/static/assets/static/themes/w-theme-blue.css">
+<link rel="stylesheet" type="text/css" href="/static/assets/dist/semantic.min.css">
+<link rel="stylesheet" type="text/css" href="/static/assets/static/css/sweetalert.min.css">
+<link rel="stylesheet" type="text/css" href="/static/assets/static/css/nav.css">
+<link rel="shortcut icon" href="/static/assets/static/image/loader.png" />
+<link rel="apple-touch-icon" href="/static/assets/static/image/loader.png" />
+<script src="/static/assets/static/module/swif.js"></script>
+<script src="/static/assets/dist/jquery.min.js"></script>
+<script src="/static/assets/static/js/popper.min.js"></script>
+<script src="/static/assets/static/js/bootstrap.min.js"></script>
+<script src="/static/assets/static/js/sweetalert.min.js"></script>
+<script src="/static/assets/dist/semantic.min.js"></script>
+<link rel="stylesheet" href="/static/assets/static/lib/prism.css" />
+<link rel="stylesheet" href="/static/assets/static/lib/prism2.css" />
+<link rel="stylesheet" href="/static/assets/static/lib/codemirror.css">
+<link rel="stylesheet" href="/static/assets/static/css/editor_2.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.slim.min.js"></script>
+<script>
+var on = XJSX.event.on,
+emit = XJSX.event.emit;
+emit("hashchange");
+</script>
+
+<style>
+
+</style>
+  <!-- template -->
+  
+  <!-- navigation bar -->
+  <template id="sidenav">
+    <div id="mySidenav" class="sidenav">
+      <h3 class="w-bold-x site-title">
+        Documentation
+      </h3>
+      <a href="javascript:void(0)" class="closebtn" onclick="openNav()">&times;</a>
+      <a href="#" class="intro-act"><i class="fa fa-home"></i> Introduction</a>
+      <a class="accordion lms-act"><i class="fa fa-code"></i> API Docs</a>
+      <ul class="panel">
+        <li><a href="#lms_admin" class="l-a-act"><i class="fa fa-user"></i> Admin</a></li>
+        <li><a href="#lms_teacher" class="l-t-act"><i class="fa fa-users"></i> Teacher</a></li>
+          <li><a href="#lms_student" class="l-u-act"><i class="fa fa-users"></i> Student</a></li>
+      </ul>
+    </div>
+    <script>
+      
+      var acc = document.getElementsByClassName("accordion");
+var i;
+
+for (i = 0; i < acc.length; i++) {
+  acc[i].addEventListener("click", function() {
+    this.classList.toggle("active");
+    var panel = this.nextElementSibling;
+    if (panel.style.maxHeight) {
+      panel.style.maxHeight = null;
+    } else {
+      panel.style.maxHeight = panel.scrollHeight + "px";
+    } 
+  });
+} 
+
+    </script>
+  </template>
+
+  <!-- header -->
+  <template id="header">
+    <header>
+      <!--
+      <form class="w-margin-right" id="search-form">
+        <div class="input-group">
+          <input type="text" class="form-control" placeholder="Search Anything" id="search">
+          <div class="input-group-append">
+            <span class="input-group-text" style="background:none;"><i class="fa fa-search"></i></span>
+          </div>
+        </div>
+      </form>
+      -->
+      <div class="side-content">
+        <div class="opennav" onclick="openNav()"><i class="fa fa-navicon"></i></div>
+      </div>
+    </header>
+    
+  </template>
+
+  <!-- for dashboard -->
+  <template id="introduction">
+    
+    <?use-template: "sidenav"?>
+    <!-- Add all page content inside this div if you want the side nav to push page content to the right (not used if you only want the sidenav to sit on top of the page -->
+    <main class="">
+        <?use-template: "header"?>
+        <h3>INTRODUCTION</h3>
+        <h3>Welcome to Tolyfun LMS API Documentation</h3>
+        <p>Welcome to the <b>Tolyfun LMS</b> API documentation! Our API provides a comprehensive and flexible way to interact with the Tolyfun educational platform.</p>
+        <h3>Key Features</h3>
+                  <ul style="list-style-type:square!important;padding-left:20px!important;">
+                    <li>
+                      <b>Easy Integration: </b>Clear and concise endpoints that simplify the integration process.
+                    </li>
+                    <li>
+                      <b>Comprehensive Documentation: </b>Detailed descriptions of endpoints, parameters, responses, and error messages.
+                    </li>
+                    <li>
+                      <b>Scalability: </b>Robust and scalable API designed to handle high traffic and large datasets.
+                    </li>
+                    <li>
+                      <b>Security: </b>Secure endpoints with authentication to ensure your data is protected.
+                    </li>
+                  </ul>
+                  <h3>Parameters and Responses</h3>
+                  <p>
+                    Each endpoint description includes the required and optional parameters, along with detailed information about
+                    the expected responses. This ensures you have all the information you need to integrate our API into your frontend seamlessly.
+                  </p>
+                  <h3>Error Handling</h3>
+                  <p>
+                    We provide detailed error messages and status codes to help you troubleshoot and resolve any issues that may arise during integration.
+                  </p>
+                  <h3>API Sections</h3>
+                  <p>The API sections are divided as follows with their corresponding endpoints and functions:</p>
+                  <div id="accordion">
+
+                    <div class="card">
+                      <div class="card-header">
+                        <a class="card-link" data-toggle="collapse" href="#collapseOne">
+                          <h3>User Account API</h3>
+                        </a>
+                      </div>
+                      <div id="collapseOne" class="collapse show" data-parent="#accordion">
+                        <div class="card-body">
+                          <ul style="list-style-type:disc!important;padding-left:20px!important;">
+                            <li><b>Create Account: </b>An API endpoint to create a user account</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="card">
+                      <div class="card-header">
+                        <a class="collapsed card-link" data-toggle="collapse" href="#collapseTwo">
+                          Collapsible Group Item #2
+                        </a>
+                      </div>
+                      <div id="collapseTwo" class="collapse" data-parent="#accordion">
+                        <div class="card-body">
+                          Lorem ipsum..
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="card">
+                      <div class="card-header">
+                        <a class="collapsed card-link" data-toggle="collapse" href="#collapseThree">
+                          Collapsible Group Item #3
+                        </a>
+                      </div>
+                      <div id="collapseThree" class="collapse" data-parent="#accordion">
+                        <div class="card-body">
+                          Lorem ipsum..
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+                  <h4>Happy coding! &#128512;</h4>
+
+      
+    </main>
+    <script>
+      $('.intro-act').addClass('active');
+      $('.intro-act2').addClass('active');
+    </script>
+</template>
+
+  <!-- for API Docs -->
+  <template id="lms_admin">
+    <?use-template: "sidenav"?>
+    <div class="page-load">
+      <div class="loader">
+        <div class="ball w-red"></div>
+        <div class="ball w-green"></div>
+        <div class="ball w-blue"></div>
+      </div>
+    </div>
+    <div class="pin-container3">
+      <form class="pin-con w-card">
+        <p class="w-text-gray">Kindly Enter Your 4-digit Access PIN to continue.</p>
+        <div class="pin-inputs">
+          <input type="password" class="pin-in" maxlength="1" minlength="1" id="pin1" />
+          <input type="password" class="pin-in" maxlength="1" minlength="1" id="pin2" />
+          <input type="password" class="pin-in" maxlength="1" minlength="1" id="pin3" />
+          <input type="password" class="pin-in" maxlength="1" minlength="1" id="pin4" />
+          <div class="show-pin"><i class="fa fa-eye"></i></div>
+        </div>
+      </form>
+    </div>
+        <!-- Add all page content inside this div if you want the side nav to push page content to the right (not used if you only want the sidenav to sit on top of the page -->
+        <main class="">
+          <?use-template: "header"?>
+          <div class="api-main">
+            <h2 class="w-bold-x w-center">Tolyfun LMS Admin API</h2>
+            <div class="api-main w-padding-top">
+              <!-- Nav tabs -->
+              <ul class="nav nav-tabs">
+                <li class="nav-item ap">
+                  <a class="nav-link active" data-toggle="tab" href="#aplms">Hoistflick Info</a>
+                </li>
+                <li class="nav-item ap">
+                  <a class="nav-link" data-toggle="tab" href="#apaccount">Admin Account</a>
+                </li>
+                <li class="nav-item ap">
+                  <a class="nav-link" data-toggle="tab" href="#apusers">Users</a>
+                </li>
+                <li class="nav-item ap">
+                  <a class="nav-link" data-toggle="tab" href="#apcourse">Courses</a>
+                </li>
+              </ul>
+
+              <!-- Tab panes -->
+              <div class="tab-content">
+                <div class="tab-pane container active" id="aplms"></div>
+                <div class="tab-pane container fade" id="apaccount"></div>
+                <div class="tab-pane container fade" id="apusers"></div>
+                <div class="tab-pane container fade" id="apcourse"></div>
+              </div>
+            </div>
+          </div>
+        </main>
+    <script src="/static/assets/static/lib/codemirror.js"></script>
+    <script src="/static/assets/static/lib/codemirror_jsx.js"></script>
+    <script src="/static/assets/static/js/lms_admin.js"></script>
+    <script src="/static/assets/static/js/editor_2.js"></script>
+    <script src="/static/assets/static/lib/prism.js"></script>
+    <script src="/static/assets/static/lib/prism1.js"></script>
+    <script src="/static/assets/static/lib/prism2.js"></script>
+    <script>
+      $('.l-a-act').addClass('active');
+      $('.lms-act').addClass('active');
+    </script>
+  </template>
+
+  <template id="lms_student">
+    <?use-template: "sidenav"?>
+    <div class="page-load">
+      <div class="loader">
+        <div class="ball w-red"></div>
+        <div class="ball w-green"></div>
+        <div class="ball w-blue"></div>
+      </div>
+    </div>
+    <div class="pin-container3">
+      <form class="pin-con w-card">
+        <p class="w-text-gray">Kindly Enter Your 4-digit Access PIN to continue.</p>
+        <div class="pin-inputs">
+          <input type="password" class="pin-in" maxlength="1" minlength="1" id="pin1" />
+          <input type="password" class="pin-in" maxlength="1" minlength="1" id="pin2" />
+          <input type="password" class="pin-in" maxlength="1" minlength="1" id="pin3" />
+          <input type="password" class="pin-in" maxlength="1" minlength="1" id="pin4" />
+          <div class="show-pin"><i class="fa fa-eye"></i></div>
+        </div>
+      </form>
+    </div>
+        <!-- Add all page content inside this div if you want the side nav to push page content to the right (not used if you only want the sidenav to sit on top of the page -->
+        <main class="">
+          <?use-template: "header"?>
+          <div class="api-main">
+            <h2 class="w-bold-x w-center">Tolyfun LMS Student API</h2>
+            <div class="api-main w-padding-top">
+              <!-- Nav tabs -->
+              <ul class="nav nav-tabs">
+                <li class="nav-item ap">
+                  <a class="nav-link active" data-toggle="tab" href="#aplms">Hoistflick Info</a>
+                </li>
+                <li class="nav-item ap">
+                  <a class="nav-link" data-toggle="tab" href="#apaccount">User Account</a>
+                </li>
+                <li class="nav-item ap">
+                  <a class="nav-link" data-toggle="tab" href="#apcourse">Courses</a>
+                </li>
+              </ul>
+
+              <!-- Tab panes -->
+              <div class="tab-content">
+                <div class="tab-pane container active" id="aplms"></div>
+                <div class="tab-pane container fade" id="apaccount"></div>
+                <div class="tab-pane container fade" id="apcourse"></div>
+              </div>
+            </div>
+          </div>
+        </main>
+    <script src="/static/assets/static/lib/codemirror.js"></script>
+    <script src="/static/assets/static/lib/codemirror_jsx.js"></script>
+    <script src="/static/assets/static/js/lms_client.js"></script>
+    <script src="/static/assets/static/js/editor_2.js"></script>
+    <script src="/static/assets/static/lib/prism.js"></script>
+    <script src="/static/assets/static/lib/prism1.js"></script>
+    <script src="/static/assets/static/lib/prism2.js"></script>
+    <script>
+      $('.l-u-act').addClass('active');
+      $('.lms-act').addClass('active');
+    </script>
+  </template>
+
+
+  <!-- error 404 page -->
+  <template id="404">
+    <?include: "templates/_parts/404.html"?><?end?>
+</template>
+
+<!-- Routes -->
+<!-- homepage -->
+<template route="/">
+  <?use-template: "introduction"?>
+</template>
+<template route="/lms_admin">
+  <?use-template: "lms_admin"?>
+</template>
+<template route="/lms_student">
+  <?use-template: "lms_student"?>
+</template>
+
+</head>
+<body>
+  <script>
+    
+</script>
+  
+<?on: "hashchange"?>
+
+<?eval:
+"var hash=location.hash
+hash=hash.replace(/^\/?#\/?|^/img,'/')
+var page=document.querySelector(`template[route='${hash}']`)||'404';"?>
+
+
+
+<?use-template: page?>
+<?end?>
+
+<script src="/static/assets/static/js/functions.js"></script>
+
+</body>
+</html>                                                                                                                                               
