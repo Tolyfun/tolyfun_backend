@@ -1,20 +1,20 @@
 
-var base_url2 = `https://lms.pythonanywhere.com/api/v2/`
-var base_image_url = `https://lms.pythonanywhere.com/`
-var admin = [
+let base_url2 = `https://tolyfun.pythonanywhere.com/api/v1/`
+let base_image_url = `https://tolyfun.pythonanywhere.com/`
+let admin = [
   /* =========================== LMS ========================= */
   {
-    title: "Get Hoistflick Info",
+    title: "Get School Info",
     value: "get_site_info",
     method: "GET",
-    type: "lms",
-    url: `${base_url2}lms/`,
+    type: "school",
+    url: `${base_url2}school/`,
     params: `
     <tr>
       
     </tr>`,
     request: `
-    const url = "${base_url2}lms/";
+    const url = "${base_url2}school/";
     
     var headers = {
         'Accept': 'application/json'
@@ -30,19 +30,25 @@ var admin = [
     success_response: `
     [
       {
-        "title": "Hoistflick",
-        "subtitle": "",
-        "primary_email": "",
-        "secondary_email": "",
-        "primary_phone": "",
-        "secondary_phone": "",
-        "privacy_policy": "", // html content
-        "terms_and_conditions": "", // html content
-        "about": "",
-        "logo": "${base_image_url}media/lms/logo.jpg",
-        "icon": "${base_image_url}media/lms/icon.jpg",
-        "privacy_pdf": "${base_image_url}media/lms/lms_privacy_policy.pdf",
-        "terms_pdf": "${base_image_url}media/lms/lms_terms_and_conditions.pdf"
+          "name": "Tolyfun",
+          "motto": "In learning and character",
+          "primary_email": "",
+          "secondary_email": "",
+          "primary_phone": "",
+          "secondary_phone": "",
+          "privacy_policy": "", // html content
+          "terms_of_use": "", // html content
+          "about": "",  // html content
+          "logo": "${base_image_url}media/logo/logo.jpg",
+          "icon": "${base_image_url}media/icon/icon.jpg",
+          "privacy_pdf": "${base_image_url}media/privacy_policy/privacy_policy.pdf",
+          "terms_pdf": "${base_image_url}media/terms_of_use/terms_and_conditions.pdf"
+          "socials": {
+              "linkedin": "",
+              "twitter": "",
+              "facebook": "",
+              "website": ""
+          }
       }
     ]`,
     error_response: `
@@ -52,8 +58,120 @@ var admin = [
       "message": "{error details}"
     }`
   },
+  {
+    title: "Admin Login Authentication",
+    value: "get_site_info",
+    method: "POST",
+    type: "account",
+    url: `${base_url2}auth/login/`,
+    params: `
+    <tr>
+      <td>username</td>
+      <td>String</td>
+      <td>Required; username/email of admin</td>
+    </tr>
+    <tr>
+      <td>password</td>
+      <td>String</td>
+      <td>Required</td>
+    </tr>`,
+    request: `
+    var url = "${base_url2}auth/login/"
+    var formData = {
+        'username':'admin@gmail.com',
+        'password':'password123'
+    }
+    var headers = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+    }
+    fetch(url, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(formData)
+    })
+    .then(res => {return res.json()})
+    .then(data => {console.log(data)})
+    .catch(err => {console.log(err)})
+    `,
+    axios_request: ``,
+    success_response: `
+    {
+      "message": "Confirmation code has been sent to admi****@gmail.com. It expires in 10 minutes.",
+      "email": "admin@gmail.com"
+    }`,
+    error_response: `
+    // error due to invalid parameters
+    {
+      "message": "Invalid login credentials"
+    }
+      // error due to unauthorized request
+    {
+      "message": "User is not authorized for this operation."
+    }`
+  },
+  {
+    title: "Confirm Email for Login",
+    value: "get_site_info",
+    method: "POST",
+    type: "account",
+    url: `${base_url2}accounts/confirm_login/`,
+    params: `
+    <tr>
+      <td>email</td>
+      <td>String</td>
+      <td>Required</td>
+    </tr>
+    <tr>
+      <td>code</td>
+      <td>String</td>
+      <td>Required</td>
+    </tr>`,
+    request: `
+    const url = "${base_url2}accounts/confirm_login/";
+    var formData = {
+        'email':'admin@gmail.com',
+        'code':'34073329'
+    }
+    var headers = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+    }
+    fetch(url, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(formData)
+    })
+    .then(res => {return res.json()})
+    .then(data => {console.log(data)})
+    .catch(err => {console.log(err)})
+    `,
+    axios_request: ``,
+    success_response: `
+    // tokens are refreshed/changed for every successful login request
+    // This is to prevent running multiple session of the same admin account
+    // tokens are used for authorization for API requests
+    {
+      "token": "841ee7393891a48d2a05056ebec3307bb3465050"
+    }`,
+    error_response: `
+    // error due to expired confirmation code
+    {
+      'status': 'error',
+      'message': "Confirmation code has already expired. kindly login again to get another confirmation code.",
+    }
+    // error due to invalid email
+    {
+      "status": "error",
+      "message": "Invalid Email"
+    }
+      // error due to invalid confirmation code
+    {
+      "status": "error",
+      "message": "Invalid confirmation code"
+    }`
+  },
 ]
-
 
 
 function loadApi() {
@@ -132,7 +250,7 @@ ${x[i].error_response}
 </section>
       `;
       switch(x[i].type) {
-        case "lms":
+        case "school":
           $('#aplms').append(temp);
           break;
         case "account":
@@ -174,6 +292,7 @@ $('.lang-sel').on('change', function() {
   $(this).parent('.code-header').siblings('pre').children(val).show();
 })
 }
+
 
 loadApi();
 

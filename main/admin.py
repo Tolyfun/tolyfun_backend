@@ -3,6 +3,7 @@ from .models import *
 
 # Register your models here.
 admin.site.register(School)
+admin.site.register(Owner)
 
 
 @admin.register(Student)

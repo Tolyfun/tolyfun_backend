@@ -2,6 +2,9 @@ from django.conf import settings
 from django.core.mail import send_mail
 
 
+site_email = "rigantech@gmail.com"
+
+
 def confirmation_email(receiver, name, code):
     subject = f"Hoistflick: Confirmation Code"
     message = ''
@@ -27,9 +30,9 @@ def confirmation_email(receiver, name, code):
 
 
 def confirmation_login(receiver, name, code):
-    subject = f"Hoistflick: Login Confirmation Code"
+    subject = f"Tolyfun: Login Confirmation Code"
     message = ''
-    from_email = f'rigantech@gmail.com'  # Sender's email
+    from_email = site_email  # Sender's email
     recipient_list = [receiver]  # List of recipient emails
     html_message = f"""
     <center>
@@ -37,7 +40,7 @@ def confirmation_login(receiver, name, code):
     </center>
     <div style="text-align:left; font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;">
     <h4>Dear {name},<h4><br><br>
-    <p>This is to confirm that there is a login attempt for account on <b>Hoistflick</b>.</p>
+    <p>This is to confirm that there is a login attempt for account on <b>Tolyfun</b>.</p>
     <p>Kindly enter the confirmation code below to verify your login.</p>
     <h1 style="text-align:center;margin:20px;letter-spacing:15px;">{code}</h1>
     <br><br>
@@ -45,7 +48,7 @@ def confirmation_login(receiver, name, code):
     <p>You are getting this email because this email is registered with us.</p>
     <p>We hope that you enjoy your experience with us.</p><br><br>
     <h4>Best Regards,<h4>
-    <h4>Hoistflick.</h4>
+    <h4>Tolyfun.</h4>
     </div>
     """
     fail_silently = False

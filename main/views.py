@@ -110,7 +110,7 @@ def documentation(request):
 
 class CustomAuthToken(ObtainAuthToken):
     def post(self, request, *args, **kwargs):
-        username = request.data.get('email')
+        username = request.data.get('username')
         password = request.data.get('password')
         try:
             user = User.objects.get(email=username)
@@ -122,42 +122,24 @@ class CustomAuthToken(ObtainAuthToken):
                     'message': "Invalid login credentials."
                 })
         if user.check_password(password):
-            if user.is_active:
+            if user.is_superuser:
                 token, created = Token.objects.get_or_create(user=user)
-                profile = Student.objects.get(user=user)
-                if not profile.confirmedEmail:
-                    return Response({
-                        'message': f"Your account has not been activated. Please confirm your email to activate your account"
-                    })
-                if profile._2fa_enabled:
-                    code = generateCode(8)
-                    profile._2fa_code = code
-                    profile.save()
-                    confirmation_login(user.email, profile.firstName, code)
-                    profile._2fa_date = timezone.now()
-                    profile.save()
-                    ho = user.email.split('@')[1]
-                    return Response({
-                        'message': f"Confirmation code has been sent to {user.email[:5]}*****@{ho}. It expires in 10 minutes.",
-                        'email': user.email
-                    })
-                else:
-                    # token.delete()
-                    # new_token = Token.objects.create(user=user)
-                    Log.objects.create(log=f"{user.username} logged in.", details={
-                        "profile_id": f"{profile.profileId}",
-                        "2FA_enabled": False
-                    })
-                    return Response({
-                        'token': token.key,
-                        'user': {
-                            "email": user.email,
-                            "name": f"{user.first_name} {user.last_name}"
-                        }
-                    })
+                admin = Owner.objects.get(user=user)
+                # send verification code
+                code = generateCode(8)
+                admin._2fa_code = code
+                admin.save()
+                confirmation_login(user.email, "Admin", code)
+                admin._2fa_date = timezone.now()
+                admin.save()
+                ho = user.email.split('@')[1]
+                return Response({
+                    'message': f"Confirmation code has been sent to {user.email[:5]}****@{ho}. It expires in 10 minutes.",
+                    'email': user.email
+                })
             else:
                 return Response({
-                    'message': "Your account has been deactivated. Kindly contact the administrator for more enquiries."
+                    'message': "User is not authorized for this operation."
                 })
         else:
             return Response({
@@ -172,51 +154,24 @@ class SchoolViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=False,
             methods=['get'])
-    def get_testimonials(self, request, *args, **kwargs):
+    def get_info(self, request, *args, **kwargs):
         try:
-            testimonials = Testimonial.objects.all()
-            if testimonials.exists():
-                return Response({
+            school = School.objects.first()
+            return Response({
                     'status': "success",
-                    "message": "testimonials fetched",
-                    'data': [TestimonialSerializer(c).data for c in testimonials]
-                }, status=200)
-            else:
-                return Response({
-                    'status': 'success',
-                    'message': "No testimonial found",
-                }, status=200)
+                    "message": "school info fetched",
+                    'data': SchoolSerializer(school).data
+            }, status=200)
+        except School.DoesNotExist:
+            return Response({
+                'status': 'success',
+                'message': "School info has not been created yet"
+            }, status=200)
         except Exception as e:
             return Response({
                 'status': "error",
-                "message": f"{e}: Error occurred while getting testimonial list"
+                "message": f"{e}: Error occurred while getting school info"
             }, status=500)
-
-    @action(detail=False,
-            methods=['post'])
-    def join_newsletter(self, request, *args, **kwargs):
-        email = request.data.get("email")
-        if not is_valid_email(email):
-            return Response({
-                "status": "error",
-                "message": "Invalid email"
-            }, status=400)
-        try:
-            Newsletter.objects.create(email=email)
-            return Response({
-                "status": "success",
-                "message": "You have successfully subscribed to our newsletter"
-            }, status=200)
-        except IntegrityError:
-            return Response({
-                "status": "error",
-                "message": f"Sorry, this email is already subscribed to our newsletter"
-            })
-        except Exception as e:
-            return Response({
-                "status": "error",
-                "message": f"{e}"
-            })
 
 
 class SetupViewSet(viewsets.ReadOnlyModelViewSet):
@@ -226,130 +181,11 @@ class SetupViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=False,
             methods=['post'])
-    def create_account(self, request, *args, **kwargs):
-        email = request.data.get('email')
-        f_name = request.data.get('first_name')
-        l_name = request.data.get('last_name')
-        password = request.data.get('password')
-        # check if email is valid
-        if not is_valid_email(email):
-            return Response({
-                'status': 'error',
-                'message': f"Invalid email",
-            })
-        if not is_valid_password(password):
-            return Response({
-                'status': 'error',
-                'message': f"Invalid password combination (minimum of 8 characters including letters, numbers and special characters)",
-            })
-        try:
-            # check if username and email does not exist
-            usernames = []
-            emails = []
-            users = User.objects.all()
-            for user in users:
-                emails.append(user.email)
-            if email not in emails:
-                new_user = User(email=email, first_name=f_name, last_name=l_name, username=email)
-                new_user.set_password(password)
-                new_user.save()
-                try:
-                    code = generateCode(8)
-                    id = generate_key(8)
-                    """
-                    protocol = 'https://' if self.request.is_secure() else 'http://'
-                    host_name = self.request.get_host()
-                    full_url = f"{protocol}{host_name}/verify_email/{code}/"
-                    """
-                    data = {
-                        "courses": []
-                    }
-                    # create a new profile
-                    new_profile = Student(user=new_user, email=email, firstName=f_name,
-                                          lastName=l_name, confirmationCode=code,
-                                          profileId=id, userData=data)
-                    # print('he')
-                    new_profile.save()
-                    confirmation_email(email, f_name, code)
-                    Notification.objects.create(
-                        user=new_profile,
-                        title="Welcome To Hoistflick",
-                        details={
-                            "type": "account",
-                            "message": "We welcome you to Hoistflick. A verified digital skill acquisition platform"
-                        }
-                    )
-                    new_profile.confirmationDate = timezone.now()
-                    new_profile.save()
-                    Log.objects.create(log=f"{new_user.username} created an account.", details={
-                        "profile_id": f"{new_profile.profileId}"
-                    })
-                    return Response({
-                        'status': 'success',
-                        'email': email,
-                        'message': f'Account created successfully. Confirmation code has been sent to {email}. It expires in 10 minutes.',
-                    })
-                except Exception as e:
-                    return Response({
-                        'status': 'error',
-                        'message': f'{e}: Account created, Error generating profile',
-                    })
-            elif email in emails:
-                return Response({
-                    'status': 'error',
-                    'message': f"Email {email} has already been used. Kindly use another email.",
-                })
-        except Exception as e:
-            return Response({
-                'status': 'error',
-                'message': f'Error occurred while creating account: {e}',
-            })
-
-    @action(detail=False,
-            methods=['post'])
-    def confirm_email(self, request, *args, **kwargs):
-        code = request.data.get('code')
-        email = request.data.get('email')
-        try:
-            user = Student.objects.get(email=email)
-            d = timezone.now()
-            diff = d - user.confirmationDate
-            if diff >= timedelta(minutes=10):
-                user.confirmationCode = None
-                user.save()
-                return Response({
-                    'status': 'error',
-                    'message': "Confirmation code has already expired. kindly request another confirmation code.",
-                })
-            if user.confirmationCode == code:
-                user.confirmedEmail = True
-                user.save()
-                Log.objects.create(log=f"{user.profileId} confirmed email.", details={
-                    "profile_id": f"{user.profileId}",
-                    "type": "account_creation"
-                })
-                return Response({
-                    'status': "success",
-                    "message": "Email confirmed successfully."
-                })
-            else:
-                return Response({
-                    'status': 'error',
-                    'message': "Invalid Confirmation Code",
-                })
-        except Student.DoesNotExist:
-            return Response({
-                'status': 'error',
-                'message': "Unregistered Email",
-            })
-
-    @action(detail=False,
-            methods=['post'])
     def confirm_login(self, request, *args, **kwargs):
         code = request.data.get('code')
         email = request.data.get('email')
         try:
-            user = Student.objects.get(email=email)
+            user = Owner.objects.get(user__email=email, user__is_superuser=True)
             d = timezone.now()
             diff = d - user._2fa_date
             if diff >= timedelta(minutes=10):
@@ -361,66 +197,28 @@ class SetupViewSet(viewsets.ReadOnlyModelViewSet):
                 })
             if user._2fa_code == code:
                 token = Token.objects.get(user=user.user)
-                # token.delete()
-                # new_token = Token.objects.create(user=user.user)
+                token.delete()
+                new_token = Token.objects.create(user=user.user)
                 user._2fa_code = None
                 user.save()
-                Log.objects.create(log=f"{user.profileId} confirmed email.", details={
-                    "profile_id": f"{user.profileId}",
+                Log.objects.create(log=f"{user.user.username} confirmed email for login.", details={
+                    "username": f"{user.user.username}",
                     "type": "2fa_login"
                 })
                 return Response({
-                    'token': token.key
+                    'token': new_token.key
                 })
             else:
                 return Response({
                     'status': 'error',
                     'message': "Invalid Confirmation Code",
                 })
-        except Student.DoesNotExist:
+        except User.DoesNotExist:
             return Response({
                 'status': 'error',
-                'message': "Unregistered Email",
+                'message': "Invalid Email",
             })
 
-    @action(detail=False,
-            methods=['post'])
-    def request_confirm_email(self, request, *args, **kwargs):
-        code = generateCode(8)
-        email = request.data.get('email')
-        try:
-            user = Student.objects.get(email=email)
-            if user is not None:
-                if not user.confirmedEmail:
-                    user.confirmationCode = code
-                    user.save()
-                    confirmation_email(email, user.firstName, code)
-                    user.confirmationDate = timezone.now()
-                    user.save()
-                    Log.objects.create(log=f"{user.profileId} requested for confirmation email", details={
-                        "profile_id": f"{user.profileId}",
-                        "type": "account_creation"
-                    })
-                    return Response({
-                        'status': "success",
-                        'email': email,
-                        "message": f"Confirmation code has been resent to {email}. It expires in 10 minutes"
-                    })
-                else:
-                    return Response({
-                        'status': 'error',
-                        'message': "Email has already been confirmed",
-                    })
-            else:
-                return Response({
-                    'status': 'error',
-                    'message': "Unregistered Email",
-                })
-        except Student.DoesNotExist:
-            return Response({
-                'status': 'error',
-                'message': "Unregistered Email",
-            })
 
     @action(detail=False,
             methods=['post'])

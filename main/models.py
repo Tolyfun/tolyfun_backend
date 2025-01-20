@@ -32,6 +32,10 @@ def contact_info():
     return {"address": "", "email": "", "phone_number": ""}
 
 
+def school_socials():
+    return {"linkedin": "", "twitter": "", "facebook": "", "website": ""}
+
+
 # Create your models here.
 class School(models.Model):
     name = models.CharField(max_length=100, default="", blank=True)
@@ -45,12 +49,21 @@ class School(models.Model):
     privacy_policy = HTMLField(blank=True)
     terms_of_use = HTMLField(blank=True)
     about = HTMLField(blank=True)
-    socials = models.JSONField(default=dict, blank=True)
+    socials = models.JSONField(default=school_socials)
     privacy_pdf = models.FileField(upload_to="privacy_policy/", blank=True, null=True)
     terms_pdf = models.FileField(upload_to="terms_of_use/", blank=True, null=True)
 
     def __str__(self):
         return f"{self.name}: {self.motto}"
+
+
+class Owner(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="admin")
+    _2fa_code = models.CharField(max_length=8, null=True, blank=True)
+    _2fa_date = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.user.email}"
 
 
 class Student(models.Model):
