@@ -102,8 +102,8 @@ def dev_login(request):
     return render(request, "login.html")
 
 
-@login_required(login_url="dev_login")
-@superuser_required
+#@login_required(login_url="dev_login")
+#@superuser_required
 def documentation(request):
     return render(request, "index.html")
 
