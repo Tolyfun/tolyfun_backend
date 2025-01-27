@@ -17,7 +17,7 @@ def generateCode(n):
 
 
 def personal_info():
-    return {"gender": "", "nationality": "Nigeria", "state_of_origin": "", "lga": "", "hometown": ""}
+    return {"gender": "", "nationality": "Nigeria", "state_of_origin": "", "lga": ""}
 
 
 def medical_info():
@@ -71,7 +71,7 @@ class Student(models.Model):
     firstName = models.CharField(max_length=100, verbose_name="First Name", blank=True)
     lastName = models.CharField(max_length=100, verbose_name="Last Name", blank=True)
     middleName = models.CharField(max_length=100, verbose_name="Middle Name", blank=True)
-    studentId = models.CharField(max_length=8, unique=True, null=True)
+    studentId = models.CharField(max_length=10, unique=True, null=True)
     contactInfo = models.JSONField(default=contact_info)
     parentInfo = models.JSONField(default=parent_info)
     personalInfo = models.JSONField(default=personal_info)
@@ -96,7 +96,7 @@ class Teacher(models.Model):
     firstName = models.CharField(max_length=100, verbose_name="First Name", null=True)
     lastName = models.CharField(max_length=100, verbose_name="Last Name", null=True)
     middleName = models.CharField(max_length=100, verbose_name="Middle Name", blank=True)
-    staffId = models.CharField(max_length=8, unique=True, null=True)
+    staffId = models.CharField(max_length=10, unique=True, null=True)
     qualification = models.CharField(max_length=100, null=True)
     resume = models.FileField(upload_to="staff/resume/", null=True, blank=True)
     contactInfo = models.JSONField(default=contact_info)

@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.authentication import BasicAuthentication, SessionAuthentication, TokenAuthentication
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
@@ -14,6 +14,7 @@ from django.contrib.auth import login, authenticate, logout
 from django.shortcuts import render, redirect
 import re
 from django.db.models import Q
+from django.db import IntegrityError
 from .encrypt_utils import encrypt, decrypt
 from .decorators import staff_required, superuser_required
 from django.utils.crypto import get_random_string
@@ -25,6 +26,7 @@ from django.http import FileResponse, HttpResponse
 from django.core.files.base import ContentFile
 from io import BytesIO
 from django.utils import timezone
+from django.contrib import messages
 from django.utils.dateparse import parse_datetime
 from datetime import datetime, timedelta
 import io
@@ -61,7 +63,7 @@ def generate(n):
 
 
 def generate_key(n):
-    chars = string.ascii_uppercase + string.digits
+    chars = string.ascii_uppercase
     random_combination = ''.join(random.choice(chars) for _ in range(n))
     return random_combination
 
@@ -98,12 +100,40 @@ def is_valid_username(username):
         return False
 
 
+@csrf_protect
 def dev_login(request):
-    return render(request, "login.html")
+    if request.method == "POST":
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        user = authenticate(request, username=username, password=password)
+        if user:
+            if user.is_active:
+                if user.is_staff:
+                    login(request, user)
+                    return redirect('documentation')
+                else:
+                    messages.warning(request, 'Sorry, you do not have permission to login as a developer!')
+                    return redirect('dev_login')
+            else:
+                messages.warning(request, 'Your account has been disabled. Contact the admin for assistance.')
+                return redirect('dev_login')
+        else:
+            messages.warning(request, 'Invalid Login Credentials!')
+            return redirect('dev_login')
+    return render(request, 'login.html')
 
 
-#@login_required(login_url="dev_login")
-#@superuser_required
+@login_required(login_url="dev_login")
+@staff_required
+def dev_logout(request):
+    logout(request)
+    messages.warning(request, "You have been logged out, enter your details to log back in")
+    return redirect('dev_login')
+
+
+@login_required(login_url="dev_login")
+@staff_required
+@csrf_protect
 def documentation(request):
     return render(request, "index.html")
 
@@ -123,7 +153,6 @@ class CustomAuthToken(ObtainAuthToken):
                 })
         if user.check_password(password):
             if user.is_superuser:
-                token, created = Token.objects.get_or_create(user=user)
                 admin = Owner.objects.get(user=user)
                 # send verification code
                 code = generateCode(8)
@@ -220,141 +249,216 @@ class SetupViewSet(viewsets.ReadOnlyModelViewSet):
             })
 
 
-    @action(detail=False,
-            methods=['post'])
-    def forgot_password(self, request, *args, **kwargs):
-        email = request.data.get('email')
-        if not is_valid_email(email):
-            return Response({
-                'status': 'error',
-                'message': f"Invalid email",
-            })
-        try:
-            user = User.objects.get(email=email)
-            if user is not None:
-                token = get_random_string(length=8)
-                user.set_password(token)
-                user.save()
-                # send email
-                send_password_email(email, user.first_name, token)
-                return Response({
-                    'status': 'success',
-                    'message': f'Password reset instructions has been sent to {email}'
-                })
-            else:
-                return Response({
-                    'status': 'error',
-                    'message': f"Unregistered email",
-                })
-        except User.DoesNotExist:
-            return Response({
-                'status': 'error',
-                'message': f"Unregistered email",
-            })
-
-
 class StudentViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Student.objects.all()
-    serializer_class = StudentSerializer
-    permission_classes = [IsAuthenticated]
+    serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated, IsAdminUser]
     authentication_classes = [TokenAuthentication]
 
     @action(detail=False,
             methods=['get'])
-    def user_profile(self, request, *args, **kwargs):
-        try:
-            profile = Student.objects.get(user=request.user)
-            if profile is not None:
-                return Response({
-                    'status': "success",
-                    "message": "data fetched successfully",
-                    "data": StudentSerializer(profile).data
-                })
-            else:
-                return Response({
-                    'status': "error",
-                    "message": "Invalid token"
-                })
-        except Exception as e:
-            return Response({
-                'status': "error",
-                "message": f"Invalid token: {e}"
-            })
-
-    @action(detail=False,
-            methods=['post'])
-    def auth_2fa(self, request, *args, **kwargs):
-        password = request.data.get('password')
-        act = request.data.get('action')
-        try:
-            user = Student.objects.get(user=request.user)
-            if request.user.check_password(password):
-                if act is None:
-                    return Response({
-                        'status': 'error',
-                        'message': "Invalid action parameter.",
-                    })
-                if act.lower() == "activate":
-                    user._2fa_enabled = True
-                    user.save()
-                elif act.lower() == "deactivate":
-                    user._2fa_enabled = False
-                    user.save()
-                else:
-                    return Response({
-                        'status': 'error',
-                        'message': "Invalid action parameter.",
-                    })
-                return Response({
-                    'status': "success",
-                    "message": f"2 factor authentication {act}d."
-                })
-            else:
-                return Response({
-                    'status': 'error',
-                    'message': "Incorrect password",
-                })
-        except Student.DoesNotExist:
-            return Response({
-                'status': 'error',
-                'message': "Unauthorized request",
-            })
-
-    @action(detail=False,
-            methods=['post'])
-    def change_password(self, request, *args, **kwargs):
-        old_password = request.data.get('old_password')
-        new_password = request.data.get('new_password')
-        try:
-            profile = Student.objects.get(user=request.user)
-            if not is_valid_password(new_password):
-                return Response({
-                    'status': 'error',
-                    'message': f"Invalid new password combination",
-                })
+    def student_list(self, request, *args, **kwargs):
+        if request.user.is_superuser:
+            page = self.request.query_params.get('page')
+            per_page = self.request.query_params.get('pagesize')
+            query = self.request.query_params.get('search', '')
+            class_slug = self.request.query_params.get('class_slug')
+            order = self.request.query_params.get('sort_by', 'firstName')
             try:
-                if request.user.check_password(old_password):
-                    request.user.set_password(new_password)
-                    request.user.save()
+                page = int(page) if page else 1
+                per_page = int(per_page) if per_page else 20
+                start = (page - 1) * per_page
+                stop = page * per_page
+                total_items = 0
+                students = None
+                if not class_slug:
+                    total_items = Student.objects.filter(firstName__icontains=query, lastName__icontains=query,
+                                                         middleName__icontains=query, studentId__icontains=query).count()
+                    students = Student.objects.filter(firstName__icontains=query, lastName__icontains=query,
+                                                     middleName__icontains=query, studentId__icontains=query)\
+                                  .order_by(order)[start:stop]
+                else:
+                    try:
+                        classroom = Classroom.objects.get(slug=class_slug)
+                    except Classroom.DoesNotExist:
+                        return Response({
+                            'status': 'error',
+                            'message': 'Invalid classroom parameter'
+                        }, status=404)
+                    total_items = classroom.students.filter(firstName__icontains=query, lastName__icontains=query,
+                                                         middleName__icontains=query, studentId__icontains=query).count()
+                    students = classroom.students.filter(firstName__icontains=query, lastName__icontains=query,
+                                                      middleName__icontains=query, studentId__icontains=query) \
+                                   .order_by(order)[start:stop]
+                total_pages = math.ceil(total_items / per_page)
+                if students.exists():
                     return Response({
-                        'status': "success",
-                        "message": "Your password has been reset successfully!",
-                    })
+                        'status': 'success',
+                        'data': [UserSerializer(pos).data for pos in students],
+                        'message': 'student list retrieved',
+                        'page_number': page,
+                        "items_per_page": per_page,
+                        "total_pages": total_pages,
+                        "total_items": total_items,
+                        "search_query": query,
+                        "sort_by": order,
+                        "filters": {"classroom": class_slug if class_slug else None}
+                    }, status=200)
                 else:
                     return Response({
-                        'status': "error",
-                        "message": "Incorrect password",
-                    })
+                        'status': 'success',
+                        'message': 'No student found',
+                        'page_number': page,
+                        "items_per_page": per_page,
+                        "total_pages": total_pages,
+                        "total_items": total_items,
+                        "search_query": query,
+                        "sort_by": order,
+                        "filters": {"classroom": class_slug if class_slug else None}
+                    }, status=200)
             except Exception as e:
                 return Response({
                     'status': "error",
-                    "message": f"error occured: {e}",
-                })
-        except:
+                    "message": f"Error occurred: {e}"
+                }, status=500)
+        else:
             return Response({
                 'status': "error",
-                "message": "Invalid token"
+                "message": f"Request not authorized"
+            }, status=401)
+
+    @action(detail=False,
+            methods=['post'])
+    def add_student(self, request, *args, **kwargs):
+        fname = request.data.get('first_name', '')
+        lname = request.data.get('last_name', '')
+        mname = request.data.get('middle_name', '')
+        address = request.data.get('address', '')
+        email = request.data.get('email', '')
+        phone = request.data.get('phone_number', '')
+        gender = request.data.get('gender', '')
+        nation = request.data.get('nationality', 'Nigeria')
+        state = request.data.get('state_of_origin', '')
+        lga = request.data.get('local_government', '')
+        class_slug = request.data.get('class_slug', '')
+        try:
+            if not class_slug:
+                return Response({
+                    'status': "error",
+                    'message': "Classroom not assigned"
+                }, status=401)
+            try:
+                classroom = Classroom.objects.get(slug=class_slug)
+            except Classroom.DoesNotExist:
+                return Response({
+                    'status': 'error',
+                    "message": "Invalid classroom parameter"
+                })
+            no_of_students = classroom.students.count()
+            current_year = f"{datetime.now().year}"[2:]
+            ident = generate_key(3)
+            roll_no = f"{(no_of_students + 1) : 03}"
+            student_id = f"{current_year}/{ident}{roll_no}"
+            new_user = User.objects.create(username=student_id)
+            new_user.set_password(fname.strip().upper())
+            new_user.save()
+            new_student = Student(user=new_user, firstName=fname, lastName=lname, middleName=mname,
+                                 studentId=student_id, classroom=classroom)
+            new_student.save()
+            new_student.contactInfo["address"] = address
+            new_student.contactInfo["email"] = email
+            new_student.contactInfo["phone_number"] = phone
+            new_student.personalInfo["gender"] = gender
+            new_student.personalInfo["nationality"] = nation
+            new_student.personalInfo["state_of_origin"] = state
+            new_student.personalInfo["lga"] = lga
+            new_student.save()
+            classroom.students.add(new_student)
+            classroom.save()
+            return Response({
+                'status': 'success',
+                'message': f'Student \"{new_student.firstName} {new_student.lastName} - {new_student.studentId}\" added successfully.'
             })
+        except Exception as e:
+            return Response({
+                'status': "error",
+                "message": f"Error occurred: {e}"
+            }, status=500)
+
+
+class ClassroomViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Classroom.objects.all()
+    serializer_class = ClassroomSerializer
+    permission_classes = [IsAuthenticated, IsAdminUser]
+    authentication_classes = [TokenAuthentication]
+
+    @action(detail=False,
+            methods=['get'])
+    def classroom_list(self, request, *args, **kwargs):
+        if request.user.is_superuser:
+            try:
+                classrooms = Classroom.objects.all()
+                if classrooms.exists():
+                    return Response({
+                        'status': 'success',
+                        'data': [ClassroomSerializer(pos).data for pos in classrooms],
+                        'message': 'class list retrieved'
+                    }, status=200)
+                else:
+                    return Response({
+                        'status': 'success',
+                        'message': 'No class found',
+                    }, status=200)
+            except Exception as e:
+                return Response({
+                    'status': "error",
+                    "message": f"Error occurred: {e}"
+                }, status=500)
+        else:
+            return Response({
+                'status': "error",
+                "message": f"Request not authorized"
+            }, status=401)
+
+    @action(detail=False,
+            methods=['post'])
+    def add_classroom(self, request, *args, **kwargs):
+        title = request.data.get('title')
+        level = request.data.get('level')
+        staff_id = request.data.get('staff_id')
+        try:
+            if not title or not level:
+                return Response({
+                    'status': "error",
+                    'message': "Invalid parameters"
+                }, status=401)
+            slug = slugify(title)
+            new_class = Classroom(title=title, slug=slug, level=int(level))
+            new_class.save()
+            if staff_id:
+                try:
+                    staff = Teacher.objects.get(staffId=staff_id)
+                    new_class.teacher = staff
+                    new_class.save()
+                except Teacher.DoesNotExist:
+                    return Response({
+                        'status': 'success',
+                        'message': f'New classroom \"{new_class.title}\" created. Invalid staff ID'
+                    })
+            return Response({
+                'status': 'success',
+                'message': f'New classroom \"{new_class.title}\" created successfully.'
+            })
+        except IntegrityError:
+            return Response({
+                'status': "error",
+                'message': "Classroom with the same level or title already exists."
+            }, status=401)
+        except Exception as e:
+            return Response({
+                'status': "error",
+                "message": f"Error occurred: {e}"
+            }, status=500)
 
 
 class WebhookViewSet(viewsets.ReadOnlyModelViewSet):

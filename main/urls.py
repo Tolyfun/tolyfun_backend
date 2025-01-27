@@ -5,6 +5,7 @@ from . import views
 router = routers.DefaultRouter()
 router.register('school', views.SchoolViewSet)
 router.register('accounts', views.SetupViewSet, basename="profile")
+router.register('classrooms', views.ClassroomViewSet)
 router.register('students', views.StudentViewSet)
 router.register('webhooks', views.WebhookViewSet)
 

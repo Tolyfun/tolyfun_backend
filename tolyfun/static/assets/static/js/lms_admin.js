@@ -1,7 +1,7 @@
 
-let base_url2 = `https://tolyfun.pythonanywhere.com/api/v1/`
-let base_image_url = `https://tolyfun.pythonanywhere.com/`
-let admin = [
+var base_url2 = `https://tolyfun.pythonanywhere.com/api/v1/`
+var base_image_url = `https://tolyfun.pythonanywhere.com/`
+var admin = [
   /* =========================== LMS ========================= */
   {
     title: "Get School Info",
@@ -171,6 +171,288 @@ let admin = [
       "message": "Invalid confirmation code"
     }`
   },
+  /* =========================== Classrooms ========================= */
+  {
+    title: "Get Classroom List",
+    value: "get_site_info",
+    method: "GET",
+    type: "class",
+    url: `${base_url2}classrooms/classroom_list/`,
+    params: ``,
+    request: `
+    const url = "${base_url2}classrooms/classroom_list/";
+    
+    var headers = {
+        'Accept': 'application/json',
+        'Authorization': "Token {admin_token}" // requires login
+    }
+    fetch(url, {
+        headers: headers
+    })
+    .then(res => {return res.json()})
+    .then(data => {console.log(data)})
+    .catch(err => {console.log(err)})
+    `,
+    axios_request: ``,
+    success_response: `
+    {
+      "status": "success",
+      "data": [
+          {
+              "title": "JSS 1",
+              "slug": "jss-1",
+              "level": 1,
+              "teacher": null
+          },
+          {
+              "title": "JSS 2",
+              "slug": "jss-2",
+              "level": 2,
+              "teacher": null
+          },
+          {
+              "title": "JSS 3",
+              "slug": "jss-3",
+              "level": 3,
+              "teacher": null
+          },
+          {
+              "title": "SSS 1",
+              "slug": "sss-1",
+              "level": 4,
+              {
+            "title": "SSS 1",
+            "slug": "sss-1",
+            "level": 4,
+            "teacher": {
+                "title": "Mr",
+                "firstName": "John",
+                "middleName": "Williams",
+                "lastName": "Doe",
+                "staffId": "24ACT021",
+                "qualification": "BEd Biology",
+                "image": "/media/staff/images/image.jpg"
+            }
+          },
+          {
+              "title": "SSS 2",
+              "slug": "sss-2",
+              "level": 5,
+              "teacher": null
+          },
+          {
+              "title": "SSS 3",
+              "slug": "sss-3",
+              "level": 6,
+              "teacher": null
+          }
+      ],
+      "message": "class list retrieved"
+    }
+    
+    // If no class is found
+    {
+        "status": "success",
+        "message": "No class found"
+    }`,
+    error_response: `
+      // server error
+    {
+      "status": "error",
+      "message": "Error occurred: {error_details}"
+    }
+      // permission error
+    {
+      "status": "error",
+      "message": "Request not authorized"
+    }`
+  },
+  {
+    title: "Add A Classroom",
+    value: "get_site_info",
+    method: "POST",
+    type: "class",
+    url: `${base_url2}classrooms/add_classroom/`,
+    params: `
+    <tr>
+      <td>title</td>
+      <td>String</td>
+      <td>Required</td>
+    </tr>
+    <tr>
+      <td>level</td>
+      <td>Integer</td>
+      <td>Required; Each class has different levels. 2 classes cannot have the same levels</td>
+    </tr>
+    <tr>
+      <td>staff_id</td>
+      <td>String</td>
+      <td>Optional; staff ID of assigned class teacher if needed</td>
+    </tr>`,
+    request: `
+    var url = "${base_url2}classrooms/add_classroom/"
+    var formData = {
+        title: "JSS 2",
+        level: 2,
+        staff_id: "{staff_id}"
+    }
+    var headers = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': "Token {admin_token}" // requires login
+    }
+    fetch(url, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(formData)
+    })
+    .then(res => {return res.json()})
+    .then(data => {console.log(data)})
+    .catch(err => {console.log(err)})
+    `,
+    axios_request: ``,
+    success_response: `
+    {
+      "status": "success",
+      "message": "New Classroom 'JSS 2' created successfully."
+    }
+    
+    // If an invalid staff ID is provided, class is created anyways
+    {
+      "status": "success",
+      "message": "New Classroom 'JSS 2' created. Invalid staff ID"
+    }`,
+    error_response: `
+    // error due to invalid parameters such as no title or level provided
+    {
+      "status": "error",
+      "message": "Invalid parameters"
+    }
+    // Duplicate error
+    {
+      "status": "error",
+      "message": "Classroom with the same level or title already exists."
+    }
+    // server error
+    {
+      "status": "error",
+      "message": "Error occurred while creating account"
+    }`
+  },
+    /* =========================== Students ========================= */
+  {
+    title: "Get Student List",
+    value: "get_site_info",
+    method: "GET",
+    type: "users",
+    url: `${base_url2}students/student_list/`,
+    params: `
+    <tr>
+      <td>page</td>
+      <td>integer</td>
+      <td>Optional; The page number to be requested (if not provided, default is 1)</td>
+    </tr>
+    <tr>
+      <td>pagesize</td>
+      <td>integer</td>
+      <td>Optional; The number of items to be returned on a single page (if not provided, default is 20)</td>
+    </tr>
+    <tr>
+      <td>search</td>
+      <td>string</td>
+      <td>Optional; A search query. search queries are matched with title and description</td>
+    </tr>
+    <tr>
+      <td>class_slug</td>
+      <td>Integer</td>
+      <td>Optional; If filtering students by class, provide the slug of the filtered class</td>
+    </tr>
+    <tr>
+      <td>sort_by</td>
+      <td>string</td>
+      <td>Optional; sorting arrangement; available sorting are:
+      <ul>
+        <li>"firstName" - Default; sorting by first name alphabetically in ascending order</li>
+        <li>"-firstName" - sorting by first name alphabetically in descending order</li>
+        <li>"studentId" - sorting by student ID, in ascending order</li>
+        <li>"-studentId" - sorting by student ID, in descending order</li>
+      </ul>
+      </td>
+    </tr>`,
+    request: `
+    const url = "${base_url2}students/student_list/?pagesize=10&class_slug=jss-2b";
+    
+    var headers = {
+        'Accept': 'application/json',
+        'Authorization': "Token {admin_token}" // requires login
+    }
+    fetch(url, {
+        headers: headers
+    })
+    .then(res => {return res.json()})
+    .then(data => {console.log(data)})
+    .catch(err => {console.log(err)})
+    `,
+    axios_request: ``,
+    success_response: `
+    {
+      "status": "success",
+      "data": [
+          {
+              "firstName": "Hassan",
+              "middleName": "Eniola",
+              "lastName": "Ridwan",
+              "studentId": "24AC001",
+              "image": "/media/students/images/dp.png",
+              "classroom": {
+                  "title": "SSS 1",
+                  "slug": "sss-1"
+              }
+          }
+      ],
+      "message": "student list retrieved",
+      "page_number": 1,
+      "items_per_page": 20,
+      "total_pages": 1,
+      "total_items": 1,
+      "search_query": "",
+      "sort_by": "firstName",
+      "filters": {
+          "classroom": null
+      }
+    }
+    
+    // If no student is found
+    {
+        "status": "success",
+        "message": "No student found",
+        "page_number": 1,
+        "items_per_page": 20,
+        "total_pages": 0,
+        "total_items": 0,
+        "search_query": "",
+        "sort_by": "firstName",
+        "filters": {
+            "classroom": "jss-2b"
+        }
+    }`,
+    error_response: `
+      // error due to invalid class slug (if provided)
+    {
+      "status": "error",
+      "message": "Invalid classroom parameter"
+    }
+      // server error
+    {
+      "status": "error",
+      "message": "Error occurred: {error_details}"
+    }
+      // permission error
+    {
+      "status": "error",
+      "message": "Request not authorized"
+    }`
+  },
 ]
 
 
@@ -178,6 +460,7 @@ function loadApi() {
   var x = admin
   $('#aplms').empty();
   $('#apaccount').empty();
+  $('#apclass').empty();
   $('#apusers').empty();
   $('#apcourse').empty();
 
@@ -255,6 +538,9 @@ ${x[i].error_response}
           break;
         case "account":
           $('#apaccount').append(temp);
+          break;
+        case "class":
+          $("#apclass").append(temp);
           break;
         case "users":
           $('#apusers').append(temp);

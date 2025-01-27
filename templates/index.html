@@ -49,12 +49,14 @@ emit("hashchange");
       </h3>
       <a href="javascript:void(0)" class="closebtn" onclick="openNav()">&times;</a>
       <a href="#" class="intro-act"><i class="fa fa-home"></i> Introduction</a>
+        <a href="#sandbox" class="sand-act"><i class="fa fa-laptop"></i> Sandbox</a>
       <a class="accordion lms-act"><i class="fa fa-code"></i> API Docs</a>
       <ul class="panel">
         <li><a href="#lms_admin" class="l-a-act"><i class="fa fa-user"></i> Admin</a></li>
         <li><a href="#lms_teacher" class="l-t-act"><i class="fa fa-users"></i> Teacher</a></li>
           <li><a href="#lms_student" class="l-u-act"><i class="fa fa-users"></i> Student</a></li>
       </ul>
+        <a href="/logout/" class="w-text-red"><i class="fa fa-power-off"></i> Logout</a>
     </div>
     <script>
       
@@ -186,6 +188,94 @@ for (i = 0; i < acc.length; i++) {
     </script>
 </template>
 
+    <!-- for sandbox -->
+  <template id="sandbox">
+
+    <?use-template: "sidenav"?>
+    <!-- Add all page content inside this div if you want the side nav to push page content to the right (not used if you only want the sidenav to sit on top of the page -->
+    <main class="">
+        <?use-template: "header"?>
+        <h3>API PLAYGROUND/SANDBOX</h3>
+        <!-- Nav tabs -->
+        <ul class="nav nav-tabs">
+          <li class="nav-item">
+            <a class="nav-link active" data-toggle="tab" href="#home">GET REQUESTS</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" data-toggle="tab" href="#menu1">POST REQUESTS</a>
+          </li>
+        </ul>
+
+        <!-- Tab panes -->
+        <div class="tab-content">
+          <div class="tab-pane active container" id="home">
+              <form id="get_request_form" class="w-padding">
+                  <div class="form-group">
+                      <label for="get_url">Request URL:</label>
+                      <input type="url" class="form-control" id="get_url" required>
+                  </div>
+                  <div class="form-group">
+                      <label for="get_token">Token Authorization:</label>
+                      <input type="text" class="form-control" id="get_token">
+                  </div>
+                  <button class="btn btn-primary" id="get_btn">Make Request</button>
+              </form>
+              <div class="form-group w-padding">
+                  <label for="get_result">Result:</label>
+                  <textarea class="form-control w-black w-text-white" rows="20" id="get_result" readonly></textarea>
+              </div>
+          </div>
+          <div class="tab-pane container" id="menu1">
+              <form id="post_request_form" class="w-padding">
+                  {% csrf_token %}
+                  <div class="form-group">
+                      <label for="post_url">Request URL:</label>
+                      <input type="url" class="form-control" id="post_url" required>
+                  </div>
+                  <div class="form-group">
+                      <label for="post_token">Token Authorization:</label>
+                      <input type="text" class="form-control" id="post_token">
+                  </div>
+                  <div class="form-group">
+                      <label for="post_data">Post Data (JSON):</label>
+                      <textarea class="form-control" rows="10" id="post_data" required></textarea>
+                  </div>
+                  <button class="btn btn-primary" id="post_btn">Make Request</button>
+              </form>
+              <div class="form-group w-padding">
+                  <label for="post_result">Result:</label>
+                  <textarea class="form-control w-black w-text-white" rows="20" id="post_result" readonly></textarea>
+              </div>
+          </div>
+        </div>
+
+    </main>
+      <script src="/static/assets/static/js/sandbox.js"></script>
+    <script>
+      $('.sand-act').addClass('active');
+      /*
+      $("#post_data").on('keydown', function(e) {
+          if(e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault()
+              formatJson()
+          }
+      })
+      */
+      $("#post_data").on('keyup', function() {
+          formatJson()
+      })
+      $('#get_request_form').submit(function(e) {
+          e.preventDefault()
+          makeGetRequest()
+      })
+      $('#post_request_form').submit(function(e) {
+          e.preventDefault()
+          makePostRequest()
+      })
+    </script>
+</template>
+
+
   <!-- for API Docs -->
   <template id="lms_admin">
     <?use-template: "sidenav"?>
@@ -222,6 +312,9 @@ for (i = 0; i < acc.length; i++) {
                 <li class="nav-item ap">
                   <a class="nav-link" data-toggle="tab" href="#apaccount">Admin Account</a>
                 </li>
+                  <li class="nav-item ap">
+                  <a class="nav-link" data-toggle="tab" href="#apclass">Classrooms</a>
+                </li>
                 <li class="nav-item ap">
                   <a class="nav-link" data-toggle="tab" href="#apusers">Students</a>
                 </li>
@@ -235,6 +328,7 @@ for (i = 0; i < acc.length; i++) {
                 <div class="tab-pane container active" id="aplms"></div>
                 <div class="tab-pane container fade" id="apaccount"></div>
                 <div class="tab-pane container fade" id="apusers"></div>
+                  <div class="tab-pane container fade" id="apclass"></div>
                 <div class="tab-pane container fade" id="apcourse"></div>
               </div>
             </div>
@@ -325,6 +419,9 @@ for (i = 0; i < acc.length; i++) {
 <!-- homepage -->
 <template route="/">
   <?use-template: "introduction"?>
+</template>
+    <template route="/sandbox">
+  <?use-template: "sandbox"?>
 </template>
 <template route="/lms_admin">
   <?use-template: "lms_admin"?>

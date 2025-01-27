@@ -11,7 +11,15 @@ class SchoolSerializer(serializers.ModelSerializer):
                   'icon', 'privacy_pdf', 'terms_pdf', "socials"]
 
 
+class ClassSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Classroom
+        fields = ['title', 'slug']
+
+
 class UserSerializer(serializers.ModelSerializer):
+    classroom = ClassSerializer(many=False, read_only=True)
+
     class Meta:
         model = Student
         fields = ['firstName', 'middleName', 'lastName', 'studentId', 'image', 'classroom']
@@ -38,6 +46,8 @@ class TeacherSerializer(serializers.ModelSerializer):
 
 
 class ClassroomSerializer(serializers.ModelSerializer):
+    teacher = StaffSerializer(read_only=True, many=False)
+
     class Meta:
         model = Classroom
         fields = ['title', 'slug', 'level', 'teacher']
